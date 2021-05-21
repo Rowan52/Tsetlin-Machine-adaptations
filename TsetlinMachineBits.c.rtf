@@ -1,0 +1,331 @@
+{\rtf1\ansi\deff0\deftab480
+
+{\fonttbl
+{\f000 Courier New;}
+{\f001 Courier New;}
+{\f002 Courier New;}
+{\f003 Courier New;}
+{\f004 Courier New;}
+{\f005 Courier New;}
+{\f006 Courier New;}
+{\f007 Courier New;}
+{\f008 Courier New;}
+{\f009 Courier New;}
+{\f010 Courier New;}
+}
+
+{\colortbl
+\red000\green000\blue000;
+\red255\green255\blue255;
+\red000\green128\blue000;
+\red255\green255\blue255;
+\red000\green128\blue000;
+\red255\green255\blue255;
+\red000\green128\blue128;
+\red255\green255\blue255;
+\red255\green128\blue000;
+\red255\green255\blue255;
+\red000\green000\blue255;
+\red255\green255\blue255;
+\red128\green064\blue000;
+\red255\green255\blue255;
+\red000\green000\blue128;
+\red255\green255\blue255;
+\red000\green000\blue000;
+\red255\green255\blue255;
+\red128\green000\blue255;
+\red255\green255\blue255;
+\red000\green000\blue000;
+\red255\green255\blue255;
+}
+
+\f6357062\fs20\cb21\cf20 \highlight3\cf2 /*\par
+\par
+Copyright (c) 2019 Ole-Christoffer Granmo\par
+\par
+Permission is hereby granted, free of charge, to any person obtaining a copy\par
+of this software and associated documentation files (the "Software"), to deal\par
+in the Software without restriction, including without limitation the rights\par
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\par
+copies of the Software, and to permit persons to whom the Software is\par
+furnished to do so, subject to the following conditions:\par
+\par
+The above copyright notice and this permission notice shall be included in all\par
+copies or substantial portions of the Software.\par
+\par
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\par
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\par
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\par
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\par
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\par
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\par
+SOFTWARE.\par
+\par
+This code implements a multiclass version of the Tsetlin Machine from paper arXiv:1804.01508\par
+https://arxiv.org/abs/1804.01508\par
+\par
+*/\highlight1\cf0 \par
+\par
+\highlight13\cf12 #include <stdio.h>\par
+#include <stdlib.h>\par
+#include <limits.h>\par
+#include <math.h>\par
+#include <string.h>\par
+\highlight1\cf0 \par
+\highlight13\cf12 #include "fast_rand.h"\par
+\highlight1\cf0 \par
+\highlight13\cf12 #include "TsetlinMachineBits.h"\par
+\highlight1\cf0 \par
+\highlight19\cf18 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 CreateTsetlinMachine\highlight15\cf14\b ()\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight3\cf2 /* Set up the Tsetlin Machine structure */\highlight1\cf0 \par
+\par
+\tab \highlight19\cf18 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 void\highlight1\cf0  \highlight15\cf14\b *)\highlight17\cf16\b0 malloc\highlight15\cf14\b (\highlight11\cf10 sizeof\highlight15\cf14 (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight15\cf14\b ));\highlight1\cf0\b0 \par
+\par
+\tab \highlight17\cf16 tm_initialize\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b return\highlight1\cf0\b0  \highlight17\cf16 tm\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_initialize\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight3\cf2 /* Set up the Tsetlin Machine structure */\highlight1\cf0 \par
+\par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 CLAUSES\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 j\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 k\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \tab \tab \tab \tab \tab \tab \tab \tab \tab \tab \tab \par
+\tab \tab \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b ~\highlight9\cf8\b0 0\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight19\cf18 static\highlight1\cf0  \highlight17\cf16 inline\highlight1\cf0  \highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_initialize_random_streams\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight5\cf4 // Initialize all bits to zero\tab \par
+\highlight1\cf0 \tab \highlight17\cf16 memset\highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b *\highlight11\cf10 sizeof\highlight15\cf14 (\highlight19\cf18\b0 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight15\cf14\b ));\highlight1\cf0\b0 \par
+\par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 n\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 2\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight17\cf16 FEATURES\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 double\highlight1\cf0  \highlight17\cf16 p\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 1.0\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 S\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 active\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 normal\highlight15\cf14\b (\highlight17\cf16\b0 n\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight17\cf16 p\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 n\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight17\cf16 p\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b -\highlight1\cf0\b0  \highlight17\cf16 p\highlight15\cf14\b ));\highlight1\cf0\b0 \par
+\tab \highlight17\cf16 active\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 active\highlight1\cf0  \highlight15\cf14\b >=\highlight1\cf0\b0  \highlight17\cf16 n\highlight1\cf0  \highlight15\cf14\b ?\highlight1\cf0\b0  \highlight17\cf16 n\highlight1\cf0  \highlight15\cf14\b :\highlight1\cf0\b0  \highlight17\cf16 active\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight17\cf16 active\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 active\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight9\cf8 0\highlight1\cf0  \highlight15\cf14\b ?\highlight1\cf0\b0  \highlight9\cf8 0\highlight1\cf0  \highlight15\cf14\b :\highlight1\cf0\b0  \highlight17\cf16 active\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight11\cf10\b while\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 active\highlight15\cf14\b --)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 f\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 fast_rand\highlight15\cf14\b ()\highlight1\cf0\b0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 2\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight17\cf16 FEATURES\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b while\highlight1\cf0\b0  \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b [\highlight17\cf16\b0 f\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 f\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b )))\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight17\cf16 f\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 fast_rand\highlight15\cf14\b ()\highlight1\cf0\b0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 2\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight17\cf16 FEATURES\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab     \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b [\highlight17\cf16\b0 f\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b |=\highlight1\cf0\b0  \highlight9\cf8 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 f\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight5\cf4 // Increment the states of each of those 32 Tsetlin Automata flagged in the active bit vector.\par
+\highlight19\cf18 static\highlight1\cf0  \highlight17\cf16 inline\highlight1\cf0  \highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_inc\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 chunk\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 active\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 carry\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 carry_next\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight17\cf16 carry\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 active\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 carry\highlight1\cf0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight11\cf10\b break\highlight15\cf14 ;\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight17\cf16 carry_next\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 carry\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight5\cf4 // Sets carry bits (overflow) passing on to next bit\par
+\highlight1\cf0 \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b ^\highlight1\cf0\b0  \highlight17\cf16 carry\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight5\cf4 // Performs increments with XOR\par
+\highlight1\cf0 \tab \tab \highlight17\cf16 carry\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 carry_next\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 carry\highlight1\cf0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b |=\highlight1\cf0\b0  \highlight17\cf16 carry\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0  \tab \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight5\cf4 // Decrement the states of each of those 32 Tsetlin Automata flagged in the active bit vector.\par
+\highlight19\cf18 static\highlight1\cf0  \highlight17\cf16 inline\highlight1\cf0  \highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_dec\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 chunk\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 active\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 carry\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 carry_next\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight17\cf16 carry\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 active\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 carry\highlight1\cf0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight11\cf10\b break\highlight15\cf14 ;\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight17\cf16 carry_next\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (~(*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ])\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 carry\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight5\cf4 // Sets carry bits (overflow) passing on to next bit\par
+\highlight1\cf0 \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b ^\highlight1\cf0\b0  \highlight17\cf16 carry\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight5\cf4 // Performs increments with XOR\par
+\highlight1\cf0 \tab \tab \highlight17\cf16 carry\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 carry_next\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 carry\highlight1\cf0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &=\highlight1\cf0\b0  \highlight15\cf14\b ~\highlight17\cf16\b0 carry\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0  \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight3\cf2 /* Sum up the votes for each class */\highlight1\cf0 \par
+\highlight19\cf18 static\highlight1\cf0  \highlight17\cf16 inline\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 sum_up_class_votes\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 CLAUSE_CHUNKS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ++)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b +=\highlight1\cf0\b0  \highlight17\cf16 __builtin_popcount\highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight9\cf8 0x55555555\highlight15\cf14\b );\highlight1\cf0\b0  \highlight5\cf4 // 0101\par
+\highlight1\cf0 \tab \tab \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b -=\highlight1\cf0\b0  \highlight17\cf16 __builtin_popcount\highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight9\cf8 0xaaaaaaaa\highlight15\cf14\b );\highlight1\cf0\b0  \highlight5\cf4 // 1010\par
+\highlight1\cf0 \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 class_sum\highlight1\cf0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight17\cf16 THRESHOLD\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b ?\highlight1\cf0\b0  \highlight17\cf16 THRESHOLD\highlight1\cf0  \highlight15\cf14\b :\highlight1\cf0\b0  \highlight17\cf16 class_sum\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 class_sum\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight15\cf14\b -\highlight17\cf16\b0 THRESHOLD\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b ?\highlight1\cf0\b0  \highlight15\cf14\b -\highlight17\cf16\b0 THRESHOLD\highlight1\cf0  \highlight15\cf14\b :\highlight1\cf0\b0  \highlight17\cf16 class_sum\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b return\highlight1\cf0\b0  \highlight17\cf16 class_sum\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight3\cf2 /* Calculate the output of each clause using the actions of each Tsetline Automaton. */\highlight1\cf0 \par
+\highlight19\cf18 static\highlight1\cf0  \highlight17\cf16 inline\highlight1\cf0  \highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_calculate_clause_output\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 Xi\highlight15\cf14\b [],\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 predict\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight17\cf16 memset\highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 CLAUSE_CHUNKS\highlight15\cf14\b *\highlight11\cf10 sizeof\highlight15\cf14 (\highlight19\cf18\b0 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight15\cf14\b ));\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 CLAUSES\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ++)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ++)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0  \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ])\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ];\highlight1\cf0\b0 \par
+\par
+\tab \tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (!\highlight17\cf16\b0 output\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight11\cf10\b break\highlight15\cf14 ;\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0  \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 LA_CHUNKS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b [\highlight17\cf16\b0 LA_CHUNKS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 FILTER\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 LA_CHUNKS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 FILTER\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0  \highlight15\cf14\b (((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 LA_CHUNKS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 FILTER\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 output\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0  \highlight15\cf14\b !(\highlight17\cf16\b0 predict\highlight1\cf0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight17\cf16 PREDICT\highlight1\cf0  \highlight15\cf14\b &&\highlight1\cf0\b0  \highlight17\cf16 all_exclude\highlight1\cf0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab \par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 output\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk_pos\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+ \tab \tab \tab \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b [\highlight17\cf16\b0 clause_chunk\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b |=\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 clause_chunk_pos\highlight15\cf14\b );\highlight1\cf0\b0 \par
+ \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+ \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight7\cf6 /******************************************/\highlight1\cf0 \par
+\highlight7\cf6 /*** Online Training of Tsetlin Machine ***/\highlight1\cf0 \par
+\highlight7\cf6 /******************************************/\highlight1\cf0 \par
+\par
+\highlight5\cf4 // The Tsetlin Machine can be trained incrementally, one training example at a time.\par
+// Use this method directly for online and incremental training.\par
+\highlight1\cf0 \par
+\highlight19\cf18 void\highlight1\cf0  \highlight17\cf16 tm_update\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 Xi\highlight15\cf14\b [],\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 target\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight7\cf6 /*******************************/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*** Calculate Clause Output ***/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*******************************/\highlight1\cf0 \par
+\par
+\tab \highlight17\cf16 tm_calculate_clause_output\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 UPDATE\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \highlight7\cf6 /***************************/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*** Sum up Clause Votes ***/\highlight1\cf0 \par
+\tab \highlight7\cf6 /***************************/\highlight1\cf0 \par
+\par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 class_sum\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 sum_up_class_votes\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \highlight7\cf6 /*********************************/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*** Train Individual Automata ***/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*********************************/\highlight1\cf0 \par
+\tab \par
+\tab \highlight5\cf4 // Calculate feedback to clauses\par
+\highlight1\cf0 \par
+\tab \highlight19\cf18 float\highlight1\cf0  \highlight17\cf16 p\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1.0\highlight15\cf14\b /(\highlight17\cf16\b0 THRESHOLD\highlight15\cf14\b *\highlight9\cf8\b0 2\highlight15\cf14\b ))*(\highlight17\cf16\b0 THRESHOLD\highlight1\cf0  \highlight15\cf14\b +\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b -\highlight1\cf0\b0  \highlight9\cf8 2\highlight15\cf14\b *\highlight17\cf16\b0 target\highlight15\cf14\b )*\highlight17\cf16\b0 class_sum\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\tab \highlight17\cf16 memset\highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_clauses\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 CLAUSE_CHUNKS\highlight15\cf14\b *\highlight11\cf10 sizeof\highlight15\cf14 (\highlight19\cf18\b0 int\highlight15\cf14\b ));\highlight1\cf0\b0 \par
+  \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 CLAUSES\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ++)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+    \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+        \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk_pos\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+        \highlight15\cf14\b (*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_clauses\highlight15\cf14\b [\highlight17\cf16\b0 clause_chunk\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b |=\highlight1\cf0\b0  \highlight15\cf14\b (((\highlight19\cf18\b0 float\highlight15\cf14\b )\highlight17\cf16\b0 fast_rand\highlight15\cf14\b ())/((\highlight19\cf18\b0 float\highlight15\cf14\b )\highlight17\cf16\b0 FAST_RAND_MAX\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b <=\highlight1\cf0\b0  \highlight17\cf16 p\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 clause_chunk_pos\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+    \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 CLAUSES\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ++)\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \tab \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause_chunk_pos\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 j\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (!((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 feedback_to_clauses\highlight15\cf14\b [\highlight17\cf16\b0 clause_chunk\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 clause_chunk_pos\highlight15\cf14\b )))\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight11\cf10\b continue\highlight15\cf14 ;\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b ((\highlight9\cf8\b0 2\highlight15\cf14\b *\highlight17\cf16\b0 target\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b -\highlight1\cf0\b0  \highlight9\cf8 2\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 j\highlight1\cf0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b [\highlight17\cf16\b0 clause_chunk\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 clause_chunk_pos\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight5\cf4 // Type II Feedback\par
+\highlight1\cf0 \par
+\tab \tab \tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 k\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \tab \highlight17\cf16 tm_inc\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight15\cf14\b (~\highlight17\cf16\b0 Xi\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ])\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (~(*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 j\highlight15\cf14\b ][\highlight17\cf16\b0 k\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]));\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0  \highlight11\cf10\b else\highlight1\cf0\b0  \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b ((\highlight9\cf8\b0 2\highlight15\cf14\b *\highlight17\cf16\b0 target\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b -\highlight1\cf0\b0  \highlight9\cf8 2\highlight1\cf0  \highlight15\cf14\b *\highlight1\cf0\b0  \highlight15\cf14\b (\highlight17\cf16\b0 j\highlight1\cf0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b ==\highlight1\cf0\b0  \highlight9\cf8 1\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight5\cf4 // Type I Feedback\par
+\highlight1\cf0 \par
+\tab \tab \tab \highlight17\cf16 tm_initialize_random_streams\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b (((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 clause_output\highlight15\cf14\b [\highlight17\cf16\b0 clause_chunk\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 clause_chunk_pos\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 k\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \tab \highlight13\cf12 #ifdef BOOST_TRUE_POSITIVE_FEEDBACK\par
+\highlight1\cf0 \tab \tab  \tab \tab \tab \tab \highlight17\cf16 tm_inc\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ]);\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \tab \highlight13\cf12 #else\par
+\highlight1\cf0 \tab \tab \tab \tab \tab \tab \highlight17\cf16 tm_inc\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (~\highlight17\cf16\b0 tm\highlight15\cf14\b ->\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ]));\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \tab \highlight13\cf12 #endif\par
+\highlight1\cf0 \tab \tab  \tab \tab \tab \par
+\tab \tab  \tab \tab \tab \highlight17\cf16 tm_dec\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight15\cf14\b (~\highlight17\cf16\b0 Xi\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ])\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight17\cf16 tm\highlight15\cf14\b ->\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ]);\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0  \highlight11\cf10\b else\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 k\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 LA_CHUNKS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 k\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \tab \highlight17\cf16 tm_dec\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 j\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 k\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 tm\highlight15\cf14\b ->\highlight17\cf16\b0 feedback_to_la\highlight15\cf14\b [\highlight17\cf16\b0 k\highlight15\cf14\b ]);\highlight1\cf0\b0 \par
+\tab \tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 tm_score\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 unsigned\highlight1\cf0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 Xi\highlight15\cf14\b [])\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight7\cf6 /*******************************/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*** Calculate Clause Output ***/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*******************************/\highlight1\cf0 \par
+\par
+\tab \highlight17\cf16 tm_calculate_clause_output\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 Xi\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight17\cf16 PREDICT\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\par
+\tab \highlight7\cf6 /***************************/\highlight1\cf0 \par
+\tab \highlight7\cf6 /*** Sum up Clause Votes ***/\highlight1\cf0 \par
+\tab \highlight7\cf6 /***************************/\highlight1\cf0 \par
+\par
+\tab \highlight11\cf10\b return\highlight1\cf0\b0  \highlight17\cf16 sum_up_class_votes\highlight15\cf14\b (\highlight17\cf16\b0 tm\highlight15\cf14\b );\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 tm_get_state\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 la\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 la_chunk\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 la\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 chunk_pos\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 la\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 state\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight11\cf10\b for\highlight1\cf0\b0  \highlight15\cf14\b (\highlight19\cf18\b0 int\highlight1\cf0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight17\cf16 b\highlight1\cf0  \highlight15\cf14\b <\highlight1\cf0\b0  \highlight17\cf16 STATE_BITS\highlight15\cf14\b ;\highlight1\cf0\b0  \highlight15\cf14\b ++\highlight17\cf16\b0 b\highlight15\cf14\b )\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \highlight11\cf10\b if\highlight1\cf0\b0  \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 la_chunk\highlight15\cf14\b ][\highlight17\cf16\b0 b\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 chunk_pos\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \tab \tab \highlight17\cf16 state\highlight1\cf0  \highlight15\cf14\b |=\highlight1\cf0\b0  \highlight9\cf8 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 b\highlight15\cf14\b ;\highlight1\cf0\b0  \par
+\tab \tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\tab \highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b return\highlight1\cf0\b0  \highlight17\cf16 state\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 tm_action\highlight15\cf14\b (\highlight19\cf18\b0 struct\highlight1\cf0  \highlight17\cf16 TsetlinMachine\highlight1\cf0  \highlight15\cf14\b *\highlight17\cf16\b0 tm\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 clause\highlight15\cf14\b ,\highlight1\cf0\b0  \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 la\highlight15\cf14\b )\highlight1\cf0\b0 \par
+\highlight15\cf14\b \{\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 la_chunk\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 la\highlight1\cf0  \highlight15\cf14\b /\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\tab \highlight19\cf18 int\highlight1\cf0  \highlight17\cf16 chunk_pos\highlight1\cf0  \highlight15\cf14\b =\highlight1\cf0\b0  \highlight17\cf16 la\highlight1\cf0  \highlight15\cf14\b %\highlight1\cf0\b0  \highlight17\cf16 INT_SIZE\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\par
+\tab \highlight11\cf10\b return\highlight1\cf0\b0  \highlight15\cf14\b ((*\highlight17\cf16\b0 tm\highlight15\cf14\b ).\highlight17\cf16\b0 ta_state\highlight15\cf14\b [\highlight17\cf16\b0 clause\highlight15\cf14\b ][\highlight17\cf16\b0 la_chunk\highlight15\cf14\b ][\highlight17\cf16\b0 STATE_BITS\highlight15\cf14\b -\highlight9\cf8\b0 1\highlight15\cf14\b ]\highlight1\cf0\b0  \highlight15\cf14\b &\highlight1\cf0\b0  \highlight15\cf14\b (\highlight9\cf8\b0 1\highlight1\cf0  \highlight15\cf14\b <<\highlight1\cf0\b0  \highlight17\cf16 chunk_pos\highlight15\cf14\b ))\highlight1\cf0\b0  \highlight15\cf14\b >\highlight1\cf0\b0  \highlight9\cf8 0\highlight15\cf14\b ;\highlight1\cf0\b0 \par
+\highlight15\cf14\b \}\highlight1\cf0\b0 \par
+\par
+\par
+}
